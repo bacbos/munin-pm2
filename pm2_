@@ -5,10 +5,10 @@ var pm2 = require('pm2');
 // status is a string, we want an int, this makes the mapping
 var statusToInt = function (status) {
     switch (status) {
-        case 'online':  return 1;
-        case 'stopped': return 2;
-        case 'errored': return 3;
-        default:        return 0;
+        case 'online':  return 0;
+        case 'stopped': return 1;
+        case 'errored': return 2;
+        default:        return 3;
     }
 };
 
@@ -41,7 +41,7 @@ var muninOutputConfig = function (err, jobs) {
     Object.keys(jobs).forEach(function(jobname) {
         console.log('%s.label %s', jobname, jobname);
         if (module === 'status')
-            console.log('status.critical 2');
+            console.log('status.critical 1');
     });
 
     process.exit(0);
