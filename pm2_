@@ -41,7 +41,7 @@ var muninOutputConfig = function (err, jobs) {
     Object.keys(jobs).forEach(function(jobname) {
         console.log('%s.label %s', jobname, jobname);
         if (module === 'status')
-            console.log('status.critical 1');
+            console.log('%s.critical 1', jobname);
     });
 
     process.exit(0);
