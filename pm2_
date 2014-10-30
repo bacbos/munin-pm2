@@ -1,0 +1,90 @@
+#!/usr/bin/env node
+var pm2 = require('pm2');
+
+
+// status is a string, we want an int, this makes the mapping
+var statusToInt = function (status) {
+    switch (status) {
+        case 'online':  return 1;
+        case 'stopped': return 2;
+        case 'errored': return 3;
+        default:        return 0;
+    }
+};
+
+
+// creates a hash with useful infos from a pm2 object
+var formatJobs = function (err, plist, cb) {
+    if (err) return cb(err);
+
+    var jobs = {};
+
+    plist.forEach(function(job) {
+        jobs[job.name] = {
+            status: statusToInt(job.pm2_env.status),
+            memory: job.monit.memory,
+            cpu:    job.monit.cpu
+        };
+    });
+
+    cb(null, jobs);
+};
+
+
+// prints a munin readable config
+var muninOutputConfig = function (err, jobs) {
+    if (err) throw err;
+
+    console.log("graph_title pm2", module);
+    console.log("graph_category pm2");
+
+    Object.keys(jobs).forEach(function(jobname) {
+        console.log('%s.label %s', jobname, jobname);
+    });
+
+    process.exit(0);
+};
+
+// prints a munin readable output
+var muninOutput = function (err, jobs) {
+    if (err) throw err;
+
+    Object.keys(jobs).forEach(function(jobname) {
+        var value = jobs[jobname][module];
+        console.log('%s.value %s', jobname, value);
+    });
+
+    process.exit(0);
+};
+
+
+var run = function (cb) {
+    pm2.connect(function(err) {
+        if (err) return cb(err);
+
+        pm2.list(function(err, plist) {
+            formatJobs(err, plist, cb);
+        });
+    });
+};
+
+
+
+
+var args = process.argv,
+    opt  = args[args.length - 1];
+
+// find out which module we are supposed to use
+// can be : status, memory, cpu
+var module = args[1].replace(/(.+)pm2_/, '');
+if (['status', 'memory', 'cpu'].indexOf(module) === -1)
+    throw new Error('Invalid module, given : '+module+', expected : [status,memory,cpu].');
+
+switch (opt) {
+    case 'config':
+        run(muninOutputConfig);
+        break;
+    default:
+        run(muninOutput);
+        break;
+}
